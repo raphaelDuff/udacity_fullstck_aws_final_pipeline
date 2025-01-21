@@ -6,111 +6,111 @@ Description: EKSWSV1
 
 Parameters:
 
-  EksClusterName:
-    Type: String
-    Description: TODO - The name of the EKS cluster created
-    Default: eksctl-demo
-    MinLength: 1
-    MaxLength: 100
-    ConstraintDescription: You must enter the EKS cluster name
+  EksClusterName:
+    Type: String
+    Description: TODO - The name of the EKS cluster created
+    Default: eksctl-demo
+    MinLength: 1
+    MaxLength: 100
+    ConstraintDescription: You must enter the EKS cluster name
 
-  GitSourceRepo:
-    Type: String
-    Description: TODO - GitHub source repository - must contain a Dockerfile and buildspec.yml in the base
-    Default: udacity_fullstck_aws_final_pipeline
-    MinLength: 1
-    MaxLength: 100
-    ConstraintDescription: You must enter a GitHub repository name
+  GitSourceRepo:
+    Type: String
+    Description: TODO - GitHub source repository - must contain a Dockerfile and buildspec.yml in the base
+    Default: udacity_fullstck_aws_final_pipeline
+    MinLength: 1
+    MaxLength: 100
+    ConstraintDescription: You must enter a GitHub repository name
 
-  GitBranch:
-    Type: String
-    Default: main
-    Description: TODO - GitHub git repository branch - change triggers a new build
-    MinLength: 1
-    MaxLength: 100
-    ConstraintDescription: You must enter a GitHub repository branch name
+  GitBranch:
+    Type: String
+    Default: main
+    Description: TODO - GitHub git repository branch - change triggers a new build
+    MinLength: 1
+    MaxLength: 100
+    ConstraintDescription: You must enter a GitHub repository branch name
 
-  GitHubToken:
-    Type: String
-    NoEcho: true
-    Description: TODO - GitHub API token - see https://github.com/blog/1509-personal-api-tokens
-    MinLength: 3
-    MaxLength: 100
-    ConstraintDescription: You must enter a GitHub personal access token
+  GitHubToken:
+    Type: String
+    NoEcho: true
+    Description: TODO - GitHub API token - see https://github.com/blog/1509-personal-api-tokens
+    MinLength: 3
+    MaxLength: 100
+    ConstraintDescription: You must enter a GitHub personal access token
 
-  GitHubUser:
-    Type: String
-    Default: raphaelDuff
-    Description: TODO - GitHub username or organization
-    MinLength: 3
-    MaxLength: 100
-    ConstraintDescription: You must enter a GitHub username or organization
+  GitHubUser:
+    Type: String
+    Default: raphaelDuff
+    Description: TODO - GitHub username or organization
+    MinLength: 3
+    MaxLength: 100
+    ConstraintDescription: You must enter a GitHub username or organization
 
-  CodeBuildDockerImage:
-    Type: String
-    Default: aws/codebuild/standard:4.0
-    Description: AWS CodeBuild Docker optimized image
-    MinLength: 3
-    MaxLength: 100
-    ConstraintDescription: You must enter a CodeBuild Docker image
+  CodeBuildDockerImage:
+    Type: String
+    Default: aws/codebuild/standard:4.0
+    Description: AWS CodeBuild Docker optimized image
+    MinLength: 3
+    MaxLength: 100
+    ConstraintDescription: You must enter a CodeBuild Docker image
 
-  KubectlRoleName:
-    Type: String
-    Default: UdacityFlaskDeployCBKubectlRole
-    Description: TODO - IAM role used by kubectl to interact with EKS cluster
-    MinLength: 3
-    MaxLength: 100
-    ConstraintDescription: You must enter a kubectl IAM role
+  KubectlRoleName:
+    Type: String
+    Default: UdacityFlaskDeployCBKubectlRole
+    Description: TODO - IAM role used by kubectl to interact with EKS cluster
+    MinLength: 3
+    MaxLength: 100
+    ConstraintDescription: You must enter a kubectl IAM role
 
 
 Metadata:
-  AWS::CloudFormation::Interface:
-    ParameterGroups:
-      - Label:
-          default: GitHub
-        Parameters:
-          - GitHubUser
-          - GitHubToken
-          - GitSourceRepo
-          - GitBranch
-      - Label:
-          default: CodeBuild
-        Parameters:
-          - CodeBuildDockerImage
-      - Label:
-          default: IAM
-        Parameters:
-          - KubectlRoleName
-      - Label:
-          default: EKS
-        Parameters:
-          - EksClusterName
-    ParameterLabels:
-      GitHubUser:
-        default: Username
-      GitHubToken:
-        default: Access token
-      GitSourceRepo:
-        default: Repository
-      GitBranch:
-        default: Branch
-      CodeBuildDockerImage:
-        default: Docker image
-      KubectlRoleName:
-        default: kubectl IAM role
-      EksClusterName:
-        default: EKS cluster name
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: GitHub
+        Parameters:
+          - GitHubUser
+          - GitHubToken
+          - GitSourceRepo
+          - GitBranch
+      - Label:
+          default: CodeBuild
+        Parameters:
+          - CodeBuildDockerImage
+      - Label:
+          default: IAM
+        Parameters:
+          - KubectlRoleName
+      - Label:
+          default: EKS
+        Parameters:
+          - EksClusterName
+    ParameterLabels:
+      GitHubUser:
+        default: Username
+      GitHubToken:
+        default: Access token
+      GitSourceRepo:
+        default: Repository
+      GitBranch:
+        default: Branch
+      CodeBuildDockerImage:
+        default: Docker image
+      KubectlRoleName:
+        default: kubectl IAM role
+      EksClusterName:
+        default: EKS cluster name
 
 
 Resources:
 
   EcrDockerRepository:
-    Type: AWS::ECR::Repository
-    DeletionPolicy: Retain
+    Type: AWS::ECR::Repository
+    DeletionPolicy: Retain
 
-  CodePipelineArtifactBucket:
-    Type: AWS::S3::Bucket
-    DeletionPolicy: Retain
+  CodePipelineArtifactBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
 
   CustomResourceLambda:
     Type: AWS::Lambda::Function
@@ -119,76 +119,88 @@ Resources:
         ZipFile: |
           import json
           import boto3
-          from botocore.vendored import requests
+          import requests
+          import cfnresponse  # Add cfnresponse library
+
           def handler(event, context):
-            response = {
-              'Status': 'SUCCESS',
-              "Reason": "See the details in CloudWatch Log Stream: " + context.log_stream_name,
-              'PhysicalResourceId': context.log_stream_name,
-              'StackId': event['StackId'],
-              'RequestId': event['RequestId'],
-              'LogicalResourceId': event['LogicalResourceId'],
-              'Data': {"Message": "Resource creation successful!"},
-            }
+              logger = logging.getLogger()
+              logger.setLevel(logging.INFO)
 
-            client = boto3.client('iam')
-            try:
-              if event['RequestType'] == 'Create':
-                kubectl_role_name = event['ResourceProperties']['KubectlRoleName']
-                build_role_arn = event['ResourceProperties']['CodeBuildServiceRoleArn']
+              try:
+                  client = boto3.client('iam')
 
-                assume = client.get_role(RoleName = kubectl_role_name)
-                assume_doc = assume['Role']['AssumeRolePolicyDocument']
-                roles = [ { 'Effect': 'Allow', 'Principal': { 'AWS': build_role_arn }, 'Action': 'sts:AssumeRole' } ]
+                  if event['RequestType'] == 'Create':
+                      kubectl_role_name = event['ResourceProperties']['KubectlRoleName']
+                      build_role_arn = event['ResourceProperties']['CodeBuildServiceRoleArn']
 
-                for statement in assume_doc['Statement']:
-                  if 'AWS' in statement['Principal']:
-                    if statement['Principal']['AWS'].startswith('arn:aws:iam:'):
-                      roles.append(statement)
+                      assume = client.get_role(RoleName=kubectl_role_name)
+                      assume_doc = assume['Role']['AssumeRolePolicyDocument']
+                      roles = [
+                          {
+                              'Effect': 'Allow',
+                              'Principal': {'AWS': build_role_arn},
+                              'Action': 'sts:AssumeRole',
+                          }
+                      ]
 
-                assume_doc['Statement'] = roles
-                update_response = client.update_assume_role_policy(RoleName = kubectl_role_name, PolicyDocument = json.dumps(assume_doc))
-            except Exception as e:
-              print(e)
-              response['Status'] = 'FAILED'
-              response["Reason"] = e
-              response['Data'] = {"Message": "Resource creation failed"}
+                      for statement in assume_doc['Statement']:
+                          if 'AWS' in statement['Principal']:
+                              if statement['Principal']['AWS'].startswith('arn:aws:iam:'):
+                                  roles.append(statement)
 
-            response_body = json.dumps(response)
-            headers = {'content-type': '', "content-length": str(len(response_body)) }
-            put_response = requests.put(event['ResponseURL'], headers=headers, data=response_body)
-            return response
+                      assume_doc['Statement'] = roles
+                      update_response = client.update_assume_role_policy(
+                          RoleName=kubectl_role_name, PolicyDocument=json.dumps(assume_doc)
+                      )
 
-      Handler: index.handler
-      Role: !GetAtt CustomResourceLambdaExecutionRole.Arn
-      Runtime: python3.12
-      Timeout: 300
+                      cfnresponse.send(
+                          event,
+                          context,
+                          cfnresponse.SUCCESS,
+                          responseData={},
+                          physicalResourceId=kubectl_role_name,
+                      )
+
+              except Exception as e:
+                  logger.error(f"Error processing request: {e}")
+                  cfnresponse.send(
+                      event,
+                      context,
+                      cfnresponse.FAILED,
+                      responseData={'Error': str(e)},
+                      physicalResourceId=None,
+                  )
+
+          # Handler and Runtime remain the same
+          Handler: index.handler
+          Runtime: python3.12
+          Timeout: 300
 
   CustomResourceLambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaENIManagementAccess
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaENIManagementAccess
       Path: /
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
-          - Effect: Allow
-            Action: sts:AssumeRole
-            Principal:
-              Service:
-                - lambda.amazonaws.com
+        - Effect: Allow
+          Action: sts:AssumeRole
+          Principal:
+            Service:
+            - lambda.amazonaws.com
       Policies:
-        - PolicyName: codepipeline-access
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/${KubectlRoleName}
-                Effect: Allow
-                Action:
-                  - iam:GetRole
-                  - iam:UpdateAssumeRolePolicy
+      - PolicyName: codepipeline-access
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Resource: !Sub arn:aws:iam::<span class="math-inline">\{AWS\:\:AccountId\}\:role/</span>{KubectlRoleName}
+            Effect: Allow
+            Action:
+            - iam:GetRole
+            - iam:UpdateAssumeRolePolicy
 
   KubectlAssumeRoleCustomResource:
     Type: Custom::CustomResource
@@ -197,8 +209,8 @@ Resources:
       KubectlRoleName: !Ref KubectlRoleName
       CodeBuildServiceRoleArn: !GetAtt CodeBuildServiceRole.Arn
     DependsOn:
-      - CustomResourceLambda
-      - CodeBuildServiceRole
+    - CustomResourceLambda
+    - CodeBuildServiceRole
 
   CodePipelineServiceRole:
     Type: AWS::IAM::Role
@@ -207,33 +219,33 @@ Resources:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
-          - Effect: Allow
-            Principal:
-              Service: codepipeline.amazonaws.com
-            Action: sts:AssumeRole
+        - Effect: Allow
+          Principal:
+            Service: codepipeline.amazonaws.com
+          Action: sts:AssumeRole
       Policies:
-        - PolicyName: codepipeline-access
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Resource: "*"
-                Effect: Allow
-                Action:
-                  - codebuild:StartBuild
-                  - codebuild:BatchGetBuilds
-                  - codecommit:GetBranch
-                  - codecommit:GetCommit
-                  - codecommit:UploadArchive
-                  - codecommit:GetUploadArchiveStatus
-                  - codecommit:CancelUploadArchive
-                  - iam:PassRole
-              - Resource: !Sub arn:aws:s3:::${CodePipelineArtifactBucket}/*
-                Effect: Allow
-                Action:
-                  - s3:PutObject
-                  - s3:GetObject
-                  - s3:GetObjectVersion
-                  - s3:GetBucketVersioning
+      - PolicyName: codepipeline-access
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Resource: "*"
+            Effect: Allow
+            Action:
+            - codebuild:StartBuild
+            - codebuild:BatchGetBuilds
+            - codecommit:GetBranch
+            - codecommit:GetCommit
+            - codecommit:UploadArchive
+            - codecommit:GetUploadArchiveStatus
+            - codecommit:CancelUploadArchive
+            - iam:PassRole
+          - Resource: !Sub arn:aws:s3:::${CodePipelineArtifactBucket}/*
+            Effect: Allow
+            Action:
+            - s3:PutObject
+            - s3:GetObject
+            - s3:GetObjectVersion
+            - s3:GetBucketVersioning
     DependsOn: CodePipelineArtifactBucket
 
   CodeBuildServiceRole:
